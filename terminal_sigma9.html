@@ -3,41 +3,298 @@
 <head>
 <meta charset="UTF-8">
 <title>Accès Sécurisé – Sigma-9</title>
+
 <style>
-body { background:black; color:#0f0; font-family:Consolas, monospace; text-align:center; padding-top:80px; }
-input { padding:10px; font-size:20px; margin-top:20px; }
-button { padding:10px; font-size:20px; margin-left:10px; cursor:pointer; }
-#msg { margin-top:30px; font-size:22px; }
-.hidden { display:none; }
+body {
+  background:black;
+  color:#0f0;
+  font-family:Consolas, monospace;
+  text-align:center;
+  padding-top:60px;
+  overflow:hidden;
+}
+
+/* CRT scanlines */
+body::after {
+  content:"";
+  position:fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:repeating-linear-gradient(
+    to bottom,
+    rgba(0,255,0,0.03),
+    rgba(0,255,0,0.03) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events:none;
+}
+
+input, button {
+  padding:10px;
+  font-size:20px;
+  background:black;
+  color:#0f0;
+  border:1px solid #0f0;
+}
+
+button { cursor:pointer; }
+
+#msg { margin-top:20px; }
+
+/* 👽 Alien */
+.alien {
+  margin:30px auto;
+  width:160px;
+  height:200px;
+  background:#0f0;
+  border-radius:50%;
+  position:relative;
+  animation: float 2s ease-in-out infinite;
+}
+
+/* 👀 Yeux */
+.eye {
+  width:28px;
+  height:28px;
+  background:black;
+  position:absolute;
+  top:60px;
+  animation: blink 5s infinite;
+}
+.eye.left { left:35px; }
+.eye.right { right:35px; }
+
+/* 😈 Yeux possédés */
+.evil .eye {
+  height:40px;
+  animation: evilBlink 0.8s infinite;
+}
+
+/* Sourcils */
+.brow {
+  width:30px;
+  height:6px;
+  background:black;
+  position:absolute;
+  top:45px;
+}
+.brow.left { left:32px; }
+.brow.right { right:32px; }
+
+/* 😈 Rire malsain */
+.evil .mouth {
+  width:80px;
+  height:45px;
+  border-radius:0 0 50px 50px;
+  animation: laugh 0.4s infinite;
+}
+
+/* Bouche */
+.mouth {
+  position:absolute;
+  width:50px;
+  height:8px;
+  background:black;
+  bottom:55px;
+  left:50%;
+  transform:translateX(-50%);
+}
+
+/* Furieux */
+.furious {
+  animation: float 1s infinite, shake 0.15s infinite;
+}
+
+/* 😈 Tremblement violent */
+.evil {
+  animation: evilShake 0.1s infinite;
+}
+
+/* Mort */
+.dead { animation: fall 1.5s forwards; }
+
+/* Croix */
+.cross {
+  position:absolute;
+  width:30px;
+  height:4px;
+  background:red;
+  top:72px;
+}
+.cross::after {
+  content:"";
+  position:absolute;
+  width:30px;
+  height:4px;
+  background:red;
+  transform:rotate(90deg);
+}
+.cross.left { left:32px; transform:rotate(45deg); }
+.cross.right { right:32px; transform:rotate(45deg); }
+
+/* Langue */
+.tongue {
+  position:absolute;
+  width:20px;
+  height:25px;
+  background:red;
+  bottom:35px;
+  left:50%;
+  transform:translateX(-50%);
+  border-radius:0 0 10px 10px;
+}
+
+/* Glitch text */
+.glitch {
+  font-size:20px;
+  animation: glitch 0.2s infinite;
+  white-space:pre-wrap;
+}
+
+/* Animations */
+@keyframes float {
+  0%,100% { transform:translateY(0); }
+  50% { transform:translateY(-10px); }
+}
+@keyframes blink {
+  0%,96%,100% { height:28px; }
+  97%,99% { height:4px; }
+}
+@keyframes evilBlink {
+  0% { height:40px; }
+  50% { height:10px; }
+  100% { height:40px; }
+}
+@keyframes laugh {
+  0% { height:45px; }
+  50% { height:30px; }
+  100% { height:45px; }
+}
+@keyframes shake {
+  0% { transform:translateX(0); }
+  50% { transform:translateX(-2px); }
+  100% { transform:translateX(2px); }
+}
+@keyframes evilShake {
+  0% { transform:translate(0,0); }
+  25% { transform:translate(-3px,2px); }
+  50% { transform:translate(3px,-2px); }
+  75% { transform:translate(-2px,-3px); }
+  100% { transform:translate(2px,3px); }
+}
+@keyframes fall {
+  to { transform:translateY(400px) rotate(25deg); opacity:0.5; }
+}
+@keyframes glitch {
+  0% { opacity:1; }
+  50% { opacity:0.7; }
+  100% { opacity:1; }
+}
 </style>
 </head>
+
 <body>
 
-<h1>🔒 Terminal de Sécurité A.R.E.E – Sigma-9</h1>
+<h1>🔒 Terminal A.R.E.E – Sigma-9</h1>
 <p>Entrez le mot de passe d’évacuation :</p>
 
-<input id="code" type="password" maxlength="20">
+<input id="code" type="password">
 <button onclick="checkCode()">VALIDER</button>
 
 <div id="msg"></div>
+<div id="alienContainer"></div>
 
 <script>
 let essais = 5;
 const mdp = "EXTINCTION";
+const secret = "12102025230923";
+
+/* 🔊 Sons */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function beep(freq, dur) {
+  const osc = audioCtx.createOscillator();
+  osc.frequency.value = freq;
+  osc.connect(audioCtx.destination);
+  osc.start();
+  setTimeout(() => osc.stop(), dur);
+}
+
+function renderAlien(state) {
+  alienContainer.innerHTML = `
+    <div class="alien ${state}">
+      <div class="brow left"></div>
+      <div class="brow right"></div>
+      <div class="eye left"></div>
+      <div class="eye right"></div>
+      <div class="mouth"></div>
+    </div>`;
+}
+
+renderAlien("");
+
+function glitchTalk(text) {
+  let i = 0;
+  msg.className = "glitch";
+  msg.innerText = "";
+  const interval = setInterval(() => {
+    msg.innerText += text[i] || "";
+    i++;
+    beep(100 + Math.random()*200, 40);
+    if (i >= text.length) clearInterval(interval);
+  }, 60);
+}
 
 function checkCode() {
-  let saisie = document.getElementById("code").value.toUpperCase();
-  if (saisie === mdp) {
-    document.body.innerHTML = "<h1 style='color:#0f0;'>ACCÈS AUTORISÉ</h1><p>Procédure d’évacuation enclenchée…</p>";
-  } else {
-    essais--;
-    if (essais <= 0) {
-      document.body.innerHTML = "<h1 style='color:red;'>ÉCHEC IRRÉVERSIBLE</h1><p>Procédure d’extermination humaine engagée…</p>";
-      return;
-    }
-    document.getElementById("msg").innerHTML =
-      "Code incorrect.<br>Essais restants : " + essais;
+  beep(600, 80);
+  let saisie = code.value.toUpperCase();
+
+  /* FIN SECRÈTE */
+  if (saisie === secret) {
+    document.body.innerHTML = `
+      <h1>TRANSMISSION NON AUTORISÉE</h1>
+      <div class="alien evil">
+        <div class="eye left"></div>
+        <div class="eye right"></div>
+        <div class="mouth"></div>
+      </div>
+      <div id="msg" class="glitch"></div>`;
+    glitchTalk("PROTOCOLE EXTINCTION ACTIVÉ.\nNOUS ARRIVONS.\nVOUS NE POUVEZ PAS FUIR.");
+    return;
   }
+
+  if (saisie === mdp) {
+    document.body.innerHTML = `
+      <h1>ACCÈS AUTORISÉ</h1>
+      <p>👽 L'entité est satisfaite.</p>
+      <div class="alien smile">
+        <div class="eye left"></div>
+        <div class="eye right"></div>
+        <div class="mouth"></div>
+      </div>`;
+    return;
+  }
+
+  essais--;
+
+  if (essais === 3) renderAlien("angry");
+  if (essais === 2) renderAlien("furious");
+  if (essais === 1) beep(150, 500);
+
+  if (essais <= 0) {
+    document.body.innerHTML = `
+      <h1 style="color:red;">ÉCHEC IRRÉVERSIBLE</h1>
+      <p>☠️ Procédure d’extermination humaine engagée…</p>
+      <div class="alien dead">
+        <div class="cross left"></div>
+        <div class="cross right"></div>
+        <div class="tongue"></div>
+      </div>`;
+    return;
+  }
+
+  msg.innerHTML = "Code incorrect.<br>Essais restants : " + essais;
 }
 </script>
 
